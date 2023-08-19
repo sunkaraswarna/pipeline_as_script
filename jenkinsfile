@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Download Dockerfile from github') {
+            steps {
+                git branch: 'main', url: 'https://github.com/sunkaraswarna/newpipeline.git'
+            }
+        }
+        stage('Copy Dockerfile from jenkins to docker machine') {
+            steps {
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'jenkins', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: 'rsync -e ssh /var/lib/jenkins/workspace/pipelinescript/Dockerfile root@3.87.43.22:/projectdocker', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+        stage('BUILD Dockerfile on docker machine') {
+            steps {
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'docker', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''cd /projectdocker
+docker build -t $JOB_NAME:v$BUILD_ID .
+docker tag $JOB_NAME:v$BUILD_ID swarnakala/$JOB_NAME:v$BUILD_ID
+docker tag swarnakala/$JOB_NAME:v$BUILD_ID swarnakala/$JOB_NAME:latest
+docker push swarnakala/$JOB_NAME:v$BUILD_ID
+docker push swarnakala/$JOB_NAME:latest
+docker rmi -f swarnakala/$JOB_NAME:v$BUILD_ID $JOB_NAME:v$BUILD_ID
+
+''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+        stage('Deploy container on docker host') {
+            steps {
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'docker', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker run -d -p 80:80 --name=con1 swarnakala/pipelinescript
+cd /ansible
+ansible-playbook /ansible/playbook.yaml''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+    }
+}
