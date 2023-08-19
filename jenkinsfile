@@ -27,7 +27,7 @@ docker rmi -f swarnakala/$JOB_NAME:v$BUILD_ID $JOB_NAME:v$BUILD_ID
         }
         stage('Deploy container on docker host') {
             steps {
-                sshPublisher(publishers: [sshPublisherDesc(configName: 'docker', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker run -d -p 80:80 --name=con1 swarnakala/pipelinescript
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'docker', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker run -d -p 80:80 --name=con1 swarnakala/$JOB_NAME
 cd /ansible
 ansible-playbook /ansible/playbook.yaml''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
             }
